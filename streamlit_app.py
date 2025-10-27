@@ -39,7 +39,7 @@ def load_data_from_files(csv_files):
     return df
 
 def load_data_from_uploads(uploaded_files):
-    """Load and process ad data from uploaded files."""
+    """Load and process ad data from uploaded files (CSV or Excel)."""
     # Setup logging
     log_file = Path("logs") / "streamlit_dashboard.log"
     log_file.parent.mkdir(exist_ok=True)
@@ -56,12 +56,13 @@ def load_data_from_uploads(uploaded_files):
     temp_files = []
     with tempfile.TemporaryDirectory() as tmpdir:
         for uploaded_file in uploaded_files:
+            # Preserve original file extension (important for Excel files)
             temp_path = Path(tmpdir) / uploaded_file.name
             with open(temp_path, 'wb') as f:
                 f.write(uploaded_file.getbuffer())
             temp_files.append(temp_path)
         
-        # Load and process data
+        # Load and process data (supports CSV and Excel)
         df = system.load_and_normalize_data(csv_files=temp_files)
     
     return df
@@ -89,10 +90,10 @@ def main():
             st.info("Upload CSV exports from TikTok, Meta, or Google Ads")
             
             uploaded_files = st.file_uploader(
-                "Choose CSV files",
-                type=['csv'],
+                "Choose files (CSV or Excel)",
+                type=['csv', 'xlsx', 'xls'],
                 accept_multiple_files=True,
-                help="You can upload multiple CSV files at once"
+                help="You can upload multiple CSV or Excel files at once"
             )
             
             if uploaded_files:

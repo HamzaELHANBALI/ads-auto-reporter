@@ -20,13 +20,13 @@ data:
   # CSV normalization mappings
   column_mappings:
     tiktok:
-      date: "Date"
-      campaign: "Campaign Name"
+      date: "Date"  # If missing, use filename or today's date
+      campaign: "Campaign Name"  # Can also use "Ad group name" for ad-level
       spend: "Cost"
       impressions: "Impressions"
-      clicks: "Clicks"
+      clicks: "Clicks (destination)"  # Ad-level exports use this
       conversions: "Conversions"
-      revenue: "Revenue"
+      revenue: "Revenue"  # If missing, estimate from conversions * AOV
     meta:
       date: "reporting_starts"
       campaign: "campaign_name"

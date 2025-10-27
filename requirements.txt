@@ -1,28 +1,28 @@
-# Core dependencies
-pandas==2.1.4
-numpy==1.26.2
-pydantic==2.5.3
-pyyaml==6.0.1
+# Core dependencies - relaxed versions for Streamlit Cloud
+pandas>=2.0.0
+numpy>=1.23.0
+pydantic>=2.0.0
+pyyaml>=6.0
 
 # Data visualization
-plotly==5.18.0
-streamlit>=1.50.0
+plotly>=5.0.0
+streamlit>=1.28.0
 
-# Legacy dashboard (optional)
-dash==2.14.2
-dash-bootstrap-components==1.5.0
-
-# PDF generation
-reportlab==4.0.9
+# PDF generation (optional - may cause issues on Streamlit Cloud)
+# reportlab>=4.0.0
 
 # Email
-python-dotenv==1.0.0
-jinja2==3.1.2
+python-dotenv>=1.0.0
+jinja2>=3.0.0
 email-validator>=2.0.0
 
 # Logging
-colorlog==6.8.0
+colorlog>=6.0.0
 
-# Testing
-pytest==7.4.3
-pytest-cov==4.1.0
+# Optional: Dash (not needed for Streamlit version)
+# dash>=2.0.0
+# dash-bootstrap-components>=1.0.0
+
+# Testing (not needed for deployment)
+# pytest>=7.0.0
+# pytest-cov>=4.0.0

@@ -276,7 +276,6 @@ class StreamlitDashboard:
         
     def _render_revenue_chart(self, df: pd.DataFrame):
         """Render revenue vs spend chart."""
-        st.subheader("💹 Revenue vs Spend Over Time")
         
         # Aggregate by period
         period_map = {'Daily': ReportPeriod.DAILY, 'Weekly': ReportPeriod.WEEKLY, 'Monthly': ReportPeriod.MONTHLY}
@@ -316,7 +315,6 @@ class StreamlitDashboard:
     
     def _render_roas_chart(self, df: pd.DataFrame):
         """Render ROAS trend chart."""
-        st.subheader("📊 ROAS Trend")
         
         # Aggregate by period
         period_map = {'Daily': ReportPeriod.DAILY, 'Weekly': ReportPeriod.WEEKLY, 'Monthly': ReportPeriod.MONTHLY}
@@ -360,7 +358,6 @@ class StreamlitDashboard:
     
     def _render_platform_breakdown(self, df: pd.DataFrame):
         """Render platform performance breakdown."""
-        st.subheader("🌐 Platform Performance")
         
         platform_data = df.groupby('platform').agg({
             'spend': 'sum',
@@ -403,7 +400,6 @@ class StreamlitDashboard:
     
     def _render_conversion_funnel(self, df: pd.DataFrame):
         """Render conversion funnel."""
-        st.subheader("🎯 Conversion Funnel")
         
         total_impressions = df['impressions'].sum()
         total_clicks = df['clicks'].sum()
@@ -425,7 +421,6 @@ class StreamlitDashboard:
     
     def _render_top_campaigns(self, df: pd.DataFrame):
         """Render top campaigns chart."""
-        st.subheader("🏆 Top 10 Campaigns by Revenue")
         
         summaries = self.kpi_calculator.calculate_multiple_campaigns(df)
         top_10 = sorted(summaries, key=lambda x: x.total_revenue, reverse=True)[:10]
@@ -476,7 +471,6 @@ class StreamlitDashboard:
     
     def _render_campaign_table(self, df: pd.DataFrame):
         """Render detailed campaign table."""
-        st.subheader("📋 Campaign Details")
         
         summaries = self.kpi_calculator.calculate_multiple_campaigns(df)
         

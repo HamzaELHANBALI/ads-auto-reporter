@@ -15,6 +15,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Optional
 
 from ..analytics.kpi_calculator import KPICalculator
 from ..analytics.aggregator import DataAggregator

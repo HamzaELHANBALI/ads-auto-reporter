@@ -118,27 +118,43 @@ class StreamlitDashboard:
         
         # Date range with presets
         with st.sidebar.expander("📅 Date Range", expanded=True):
-            min_date = self.df['date'].min()
-            max_date = self.df['date'].max()
+            # Convert pandas timestamps to date objects
+            min_date = pd.Timestamp(self.df['date'].min()).date()
+            max_date = pd.Timestamp(self.df['date'].max()).date()
             
             # Preset date ranges
             st.caption("Quick Presets:")
             col1, col2, col3 = st.columns(3)
             
-            today = date.today()
             if col1.button("Last 7d", use_container_width=True):
-                st.session_state['start_date'] = today - timedelta(days=7)
-                st.session_state['end_date'] = today
+                # Ensure dates are within data range
+                preset_start = max(max_date - timedelta(days=7), min_date)
+                st.session_state['start_date'] = preset_start
+                st.session_state['end_date'] = max_date
+                st.rerun()
             if col2.button("Last 30d", use_container_width=True):
-                st.session_state['start_date'] = today - timedelta(days=30)
-                st.session_state['end_date'] = today
+                preset_start = max(max_date - timedelta(days=30), min_date)
+                st.session_state['start_date'] = preset_start
+                st.session_state['end_date'] = max_date
+                st.rerun()
             if col3.button("Last 90d", use_container_width=True):
-                st.session_state['start_date'] = today - timedelta(days=90)
-                st.session_state['end_date'] = today
+                preset_start = max(max_date - timedelta(days=90), min_date)
+                st.session_state['start_date'] = preset_start
+                st.session_state['end_date'] = max_date
+                st.rerun()
             
-            # Custom date picker
+            # Custom date picker - ensure defaults are within range
             default_start = st.session_state.get('start_date', min_date)
             default_end = st.session_state.get('end_date', max_date)
+            
+            # Clamp defaults to valid range
+            if isinstance(default_start, pd.Timestamp):
+                default_start = default_start.date()
+            if isinstance(default_end, pd.Timestamp):
+                default_end = default_end.date()
+            
+            default_start = max(min_date, min(default_start, max_date))
+            default_end = max(min_date, min(default_end, max_date))
             
             date_range = st.date_input(
                 "Custom Range",

@@ -19,8 +19,15 @@ from .config import Config, get_config, set_config
 from .models.enums import AdPlatform, ReportPeriod
 from .ingestion import CSVLoader, DataNormalizer, DataValidator
 from .analytics import KPICalculator, DataAggregator
-from .dashboard import PDFExporter
 from .reporting import DigestGenerator, EmailSender
+
+# Optional: PDF export (requires reportlab)
+try:
+    from .dashboard import PDFExporter
+    PDF_EXPORT_AVAILABLE = True
+except ImportError:
+    PDF_EXPORT_AVAILABLE = False
+    PDFExporter = None
 from .models.schemas import EmailConfig
 from .utils.logger import setup_logger, get_logger
 from .utils.helpers import generate_report_filename
@@ -57,7 +64,13 @@ class AdsReportingSystem:
         self.validator = DataValidator()
         self.kpi_calculator = KPICalculator()
         self.aggregator = DataAggregator()
-        self.pdf_exporter = PDFExporter(config.output_path)
+        
+        # PDF export (optional)
+        if PDF_EXPORT_AVAILABLE:
+            self.pdf_exporter = PDFExporter(config.output_path)
+        else:
+            self.pdf_exporter = None
+            
         self.digest_generator = DigestGenerator(
             target_roas=config.target_roas,
             target_ctr=config.target_ctr,
@@ -190,6 +203,10 @@ class AdsReportingSystem:
         Returns:
             Path to generated PDF
         """
+        if not PDF_EXPORT_AVAILABLE or self.pdf_exporter is None:
+            logger.warning("PDF export not available (reportlab not installed)")
+            raise RuntimeError("PDF export requires reportlab. Install with: pip install reportlab")
+        
         if self.normalized_df is None:
             raise RuntimeError("No data loaded. Call load_and_normalize_data() first.")
         
@@ -248,14 +265,16 @@ class AdsReportingSystem:
             week_end_date
         )
         
-        # Export to PDF
+        # Export to PDF (if available)
         pdf_path = None
-        if export_pdf:
+        if export_pdf and PDF_EXPORT_AVAILABLE and self.pdf_exporter:
             pdf_path = self.pdf_exporter.export_weekly_digest(
                 digest,
                 digest.top_campaigns
             )
             logger.info(f"Weekly digest PDF: {pdf_path}")
+        elif export_pdf:
+            logger.warning("PDF export not available (reportlab not installed)")
         
         return digest, pdf_path
     

@@ -513,19 +513,19 @@ class StreamlitDashboard:
         if current_df.empty:
             return pd.DataFrame()
         
-        # Calculate period length
-        start = current_df['date'].min()
-        end = current_df['date'].max()
+        # Calculate period length - ensure we're working with Timestamps
+        start = pd.Timestamp(current_df['date'].min())
+        end = pd.Timestamp(current_df['date'].max())
         period_days = (end - start).days + 1
         
-        # Get previous period
+        # Get previous period as Timestamps
         prev_end = start - timedelta(days=1)
         prev_start = prev_end - timedelta(days=period_days - 1)
         
-        # Filter to previous period
+        # Filter to previous period (comparing Timestamp to Timestamp)
         prev_df = self.df[
-            (self.df['date'] >= prev_start) & 
-            (self.df['date'] <= prev_end)
+            (pd.to_datetime(self.df['date']) >= prev_start) & 
+            (pd.to_datetime(self.df['date']) <= prev_end)
         ].copy()
         
         return prev_df

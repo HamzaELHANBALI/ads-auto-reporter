@@ -19,6 +19,7 @@ from typing import Optional
 
 from ..analytics.kpi_calculator import KPICalculator
 from ..analytics.aggregator import DataAggregator
+from ..analytics.creator_analytics import CreatorAnalytics
 from ..models.enums import ReportPeriod, AdPlatform
 from ..utils.helpers import format_currency, format_percentage
 
@@ -70,6 +71,7 @@ class StreamlitDashboard:
         self.df = df
         self.kpi_calculator = KPICalculator()
         self.aggregator = DataAggregator()
+        self.creator_analytics = CreatorAnalytics()
         
     def run(self):
         """Run the Streamlit dashboard."""
@@ -92,13 +94,27 @@ class StreamlitDashboard:
         if st.session_state.get('enable_comparison', False):
             comparison_df = self._get_previous_period_data(filtered_df)
         
-        # Main content with tabs
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "📊 Overview", 
-            "📈 Performance", 
-            "🎯 Campaigns", 
-            "📋 Detailed Analysis"
-        ])
+        # Check if creator/video data is available
+        has_creator_data = self.creator_analytics.has_creator_data(filtered_df)
+        has_video_data = self.creator_analytics.has_video_data(filtered_df)
+        
+        # Main content with tabs (add Creators tab if data available)
+        if has_creator_data or has_video_data:
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                "📊 Overview", 
+                "📈 Performance", 
+                "🎯 Campaigns",
+                "👤 Creators",
+                "📋 Detailed Analysis"
+            ])
+        else:
+            tab1, tab2, tab3, tab5 = st.tabs([
+                "📊 Overview", 
+                "📈 Performance", 
+                "🎯 Campaigns", 
+                "📋 Detailed Analysis"
+            ])
+            tab4 = None
         
         with tab1:
             self._render_overview_tab(filtered_df, comparison_df)
@@ -109,7 +125,11 @@ class StreamlitDashboard:
         with tab3:
             self._render_campaigns_tab(filtered_df)
         
-        with tab4:
+        if tab4 is not None:
+            with tab4:
+                self._render_creators_tab(filtered_df)
+        
+        with tab5:
             self._render_detailed_tab(filtered_df)
         
     def _render_sidebar(self):
@@ -722,6 +742,193 @@ class StreamlitDashboard:
             file_name=f"campaign_summary_{date.today().strftime('%Y%m%d')}.csv",
             mime="text/csv"
         )
+    
+    def _render_creators_tab(self, df: pd.DataFrame):
+        """Render creators/video performance tab."""
+        st.subheader("👤 Creator & Video Performance")
+        
+        has_creator = self.creator_analytics.has_creator_data(df)
+        has_video = self.creator_analytics.has_video_data(df)
+        
+        if not has_creator and not has_video:
+            st.info("📝 **No creator or video data available.**\n\nTo track creator performance, add a `creator_name` column to your CSV.\n\nTo track video performance, add `video_id` or `video_name` columns.")
+            return
+        
+        # Creator Performance Section
+        if has_creator:
+            st.markdown("### 🏆 Top Creators Leaderboard")
+            
+            # Metric selector
+            col1, col2 = st.columns([3, 1])
+            with col2:
+                sort_metric = st.selectbox(
+                    "Sort by",
+                    ['roas', 'total_revenue', 'total_conversions', 'ctr', 'cvr'],
+                    format_func=lambda x: {
+                        'roas': 'ROAS',
+                        'total_revenue': 'Revenue',
+                        'total_conversions': 'Conversions',
+                        'ctr': 'CTR',
+                        'cvr': 'CVR'
+                    }[x]
+                )
+            
+            # Get top creators
+            top_creators = self.creator_analytics.get_creator_leaderboard(
+                df, 
+                metric=sort_metric,
+                top_n=10
+            )
+            
+            if top_creators:
+                # Create leaderboard chart
+                creators = [c.creator_name[:30] for c in top_creators]
+                revenues = [c.total_revenue for c in top_creators]
+                spends = [c.total_spend for c in top_creators]
+                roas_values = [c.roas for c in top_creators]
+                
+                fig = go.Figure()
+                
+                # Revenue bars
+                fig.add_trace(go.Bar(
+                    name='Revenue',
+                    y=creators,
+                    x=revenues,
+                    orientation='h',
+                    marker_color='#2ecc71',
+                    text=[format_currency(r) for r in revenues],
+                    textposition='auto'
+                ))
+                
+                # Spend bars
+                fig.add_trace(go.Bar(
+                    name='Spend',
+                    y=creators,
+                    x=spends,
+                    orientation='h',
+                    marker_color='#e74c3c',
+                    text=[format_currency(s) for s in spends],
+                    textposition='auto'
+                ))
+                
+                fig.update_layout(
+                    barmode='group',
+                    template='plotly_white',
+                    height=500,
+                    xaxis_title="Amount ($)",
+                    showlegend=True,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Creator performance table
+                st.markdown("### 📊 Creator Performance Details")
+                creator_data = []
+                for c in top_creators:
+                    perf_indicator = '🟢 Excellent' if c.roas >= 5 else '🟡 Good' if c.roas >= 3 else '🔴 Needs Work'
+                    creator_data.append({
+                        'Creator': c.creator_name,
+                        'Videos': c.total_videos,
+                        'ROAS': f"{c.roas:.2f}x",
+                        'Performance': perf_indicator,
+                        'Revenue': format_currency(c.total_revenue),
+                        'Spend': format_currency(c.total_spend),
+                        'CTR': format_percentage(c.ctr),
+                        'Platforms': ', '.join([p.upper() for p in c.platforms]),
+                        'Best Video': c.best_video[:40] if c.best_video else 'N/A'
+                    })
+                
+                creator_df = pd.DataFrame(creator_data)
+                st.dataframe(creator_df, use_container_width=True, hide_index=True)
+                
+                # Export button
+                st.download_button(
+                    label="📥 Export Creator Performance (CSV)",
+                    data=creator_df.to_csv(index=False).encode('utf-8'),
+                    file_name=f"creator_performance_{date.today().strftime('%Y%m%d')}.csv",
+                    mime="text/csv"
+                )
+            else:
+                st.info("No creator data found in the filtered dataset.")
+        
+        st.markdown("---")
+        
+        # Video Performance Section
+        if has_video:
+            st.markdown("### 🎬 Top Performing Videos")
+            
+            col1, col2, col3 = st.columns([2, 1, 1])
+            with col1:
+                # Creator filter for videos
+                if has_creator:
+                    creators = ['All'] + sorted(df['creator_name'].dropna().unique().tolist())
+                    selected_creator = st.selectbox(
+                        "Filter by Creator",
+                        creators,
+                        key='video_creator_filter'
+                    )
+                    creator_filter = None if selected_creator == 'All' else selected_creator
+                else:
+                    creator_filter = None
+            
+            with col2:
+                video_sort_metric = st.selectbox(
+                    "Sort by",
+                    ['roas', 'total_revenue', 'total_conversions'],
+                    format_func=lambda x: {
+                        'roas': 'ROAS',
+                        'total_revenue': 'Revenue',
+                        'total_conversions': 'Conversions'
+                    }[x],
+                    key='video_sort'
+                )
+            
+            with col3:
+                video_count = st.number_input(
+                    "Show top",
+                    min_value=5,
+                    max_value=50,
+                    value=20,
+                    step=5
+                )
+            
+            # Get top videos
+            top_videos = self.creator_analytics.get_video_leaderboard(
+                df,
+                metric=video_sort_metric,
+                top_n=video_count,
+                creator=creator_filter
+            )
+            
+            if top_videos:
+                # Video performance table
+                video_data = []
+                for v in top_videos:
+                    video_data.append({
+                        'Video': v.video_name[:50],
+                        'Creator': v.creator_name,
+                        'Platform': v.platform.upper(),
+                        'ROAS': f"{v.roas:.2f}x",
+                        'Revenue': format_currency(v.total_revenue),
+                        'Spend': format_currency(v.total_spend),
+                        'Conversions': f"{v.total_conversions:,}",
+                        'CTR': format_percentage(v.ctr),
+                        'Days Active': v.days_active
+                    })
+                
+                video_df = pd.DataFrame(video_data)
+                st.dataframe(video_df, use_container_width=True, hide_index=True)
+                
+                # Export button
+                st.download_button(
+                    label="📥 Export Video Performance (CSV)",
+                    data=video_df.to_csv(index=False).encode('utf-8'),
+                    file_name=f"video_performance_{date.today().strftime('%Y%m%d')}.csv",
+                    mime="text/csv"
+                )
+            else:
+                st.info("No video data found for the selected filters.")
     
     def _render_detailed_tab(self, df: pd.DataFrame):
         """Render detailed analysis tab with full campaign table."""

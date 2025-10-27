@@ -50,6 +50,15 @@ NORMALIZED_COLUMNS: Final[list[str]] = [
     "revenue"
 ]
 
+# Optional columns for enhanced tracking (creator/video performance)
+OPTIONAL_COLUMNS: Final[list[str]] = [
+    "creator_name",      # Name of content creator/influencer/employee
+    "video_id",          # Unique video identifier
+    "video_name",        # Video title/name
+    "ad_set_name",       # Ad set grouping
+    "creative_type"      # e.g., 'video', 'image', 'carousel'
+]
+
 # KPI formulas as constants
 KPI_FORMULAS: Final[dict[str, str]] = {
     "ROAS": "Revenue / Spend",

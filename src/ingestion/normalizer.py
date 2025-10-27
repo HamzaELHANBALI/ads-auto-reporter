@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Optional
 import pandas as pd
-from ..models.enums import AdPlatform, NORMALIZED_COLUMNS
+from ..models.enums import AdPlatform, NORMALIZED_COLUMNS, OPTIONAL_COLUMNS
 from ..models.schemas import AdRecord
 from ..utils.helpers import parse_date_flexible, clean_numeric_value
 from ..utils.logger import get_logger
@@ -55,6 +55,14 @@ class DataNormalizer:
         if not mapping:
             raise ValueError(f"No column mapping found for platform: {platform.value}")
         
+        # Store optional columns that exist in source data (case-insensitive, handle spaces)
+        df_normalized_cols = {col.lower().replace(' ', '_'): col for col in df.columns}
+        available_optional = {}
+        for opt_col in OPTIONAL_COLUMNS:
+            opt_col_normalized = opt_col.lower().replace(' ', '_')
+            if opt_col_normalized in df_normalized_cols:
+                available_optional[opt_col] = df_normalized_cols[opt_col_normalized]
+        
         # Create normalized dataframe
         normalized_data = []
         
@@ -62,6 +70,11 @@ class DataNormalizer:
             try:
                 record = self._normalize_row(row, platform, mapping)
                 if record:
+                    # Add optional columns if they exist
+                    for std_name, orig_name in available_optional.items():
+                        if orig_name in row.index and pd.notna(row[orig_name]):
+                            record[std_name] = str(row[orig_name]).strip()
+                    
                     normalized_data.append(record)
             except Exception as e:
                 logger.warning(f"Failed to normalize row {idx}: {e}")
@@ -78,10 +91,15 @@ class DataNormalizer:
             if col not in normalized_df.columns:
                 normalized_df[col] = None if col in ['date', 'campaign'] else 0
         
-        # Order columns
-        normalized_df = normalized_df[NORMALIZED_COLUMNS]
+        # Order columns: required first, then optional
+        final_columns = NORMALIZED_COLUMNS.copy()
+        for opt_col in OPTIONAL_COLUMNS:
+            if opt_col in normalized_df.columns:
+                final_columns.append(opt_col)
         
-        logger.info(f"Successfully normalized {len(normalized_df)} rows")
+        normalized_df = normalized_df[final_columns]
+        
+        logger.info(f"Successfully normalized {len(normalized_df)} rows with optional columns: {list(available_optional.keys())}")
         return normalized_df
     
     def _normalize_row(

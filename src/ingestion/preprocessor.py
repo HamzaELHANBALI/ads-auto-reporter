@@ -61,6 +61,9 @@ class DataPreprocessor:
         
         df = df.copy()
         
+        # Remove aggregate/summary rows to avoid double-counting
+        df = self._remove_aggregate_rows(df)
+        
         # Add date column if missing
         if 'Date' not in df.columns and 'date' not in df.columns:
             df = self._add_date_column(df, file_path)
@@ -73,7 +76,60 @@ class DataPreprocessor:
         if platform == 'tiktok':
             df = self._handle_tiktok_adlevel(df)
         
-        logger.info(f"Preprocessing complete. Columns: {list(df.columns)}")
+        logger.info(f"Preprocessing complete. {len(df)} rows remaining. Columns: {list(df.columns)}")
+        return df
+    
+    def _remove_aggregate_rows(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Remove aggregate/summary rows from exports to avoid double-counting.
+        
+        TikTok (and other platforms) often include summary rows like:
+        - "Total of X results"
+        - Rows with "-" in ID columns
+        
+        Args:
+            df: Dataframe
+            
+        Returns:
+            Dataframe with aggregate rows removed
+        """
+        original_count = len(df)
+        
+        # Patterns that indicate aggregate rows
+        aggregate_patterns = [
+            'total of',
+            'total:',
+            'summary',
+            'aggregate',
+            'all results',
+            'grand total'
+        ]
+        
+        # Check common name columns
+        name_columns = ['Ad name', 'ad_name', 'Campaign Name', 'campaign_name', 'name']
+        
+        for col in name_columns:
+            if col in df.columns:
+                # Remove rows where name matches aggregate patterns
+                mask = df[col].astype(str).str.lower().str.contains('|'.join(aggregate_patterns), na=False)
+                if mask.any():
+                    removed = mask.sum()
+                    df = df[~mask].copy()
+                    logger.info(f"Removed {removed} aggregate row(s) from '{col}' column")
+        
+        # Remove rows with "-" in ID columns (common in summary rows)
+        id_columns = ['Ad ID', 'ad_id', 'Ad group ID', 'Campaign ID']
+        for col in id_columns:
+            if col in df.columns:
+                mask = df[col].astype(str).str.strip() == '-'
+                if mask.any():
+                    removed = mask.sum()
+                    df = df[~mask].copy()
+                    logger.info(f"Removed {removed} row(s) with '-' in '{col}' column")
+        
+        if len(df) < original_count:
+            logger.info(f"Total aggregate rows removed: {original_count - len(df)}")
+        
         return df
     
     def _add_date_column(self, df: pd.DataFrame, file_path: Path) -> pd.DataFrame:

@@ -1,11 +1,10 @@
-reporting_starts,campaign_name,spend,impressions,link_clicks,actions:offsite_conversion.fb_pixel_purchase,action_values:offsite_conversion.fb_pixel_purchase
-2024-01-01,Meta Retargeting,180.00,20000,900,45,1350.00
-2024-01-02,Meta Retargeting,195.00,22000,990,50,1500.00
-2024-01-03,Meta Retargeting,175.00,19000,850,42,1260.00
-2024-01-01,Lead Generation,250.00,35000,1400,70,2100.00
-2024-01-02,Lead Generation,270.00,37000,1500,75,2250.00
-2024-01-03,Lead Generation,260.00,36000,1450,73,2190.00
-
-
-
-
+reporting_starts,campaign_name,creator_name,video_name,spend,impressions,link_clicks,actions:offsite_conversion.fb_pixel_purchase,action_values:offsite_conversion.fb_pixel_purchase
+2024-01-01,Facebook Campaign A,Sarah Johnson,Carousel Ad V1,250.00,20000,800,40,1200.00
+2024-01-02,Facebook Campaign A,Sarah Johnson,Carousel Ad V2,275.00,22000,880,44,1320.00
+2024-01-03,Facebook Campaign A,Sarah Johnson,Stories Ad,260.00,21000,840,42,1260.00
+2024-01-01,Instagram Stories Test,Mike Rodriguez,Story Swipe Up,180.00,35000,1400,28,840.00
+2024-01-02,Instagram Stories Test,Mike Rodriguez,Interactive Story,195.00,38000,1520,30,900.00
+2024-01-03,Instagram Stories Test,Mike Rodriguez,Poll Story Ad,185.00,36000,1440,29,870.00
+2024-01-01,Retargeting Campaign,Elena Vasquez,Retargeting Video Ad,120.00,12000,600,36,1080.00
+2024-01-02,Retargeting Campaign,Elena Vasquez,Reminder Ad,130.00,13000,650,39,1170.00
+2024-01-03,Retargeting Campaign,Elena Vasquez,Last Chance Ad,125.00,12500,625,37,1110.00

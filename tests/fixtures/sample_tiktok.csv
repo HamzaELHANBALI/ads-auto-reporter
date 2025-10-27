@@ -1,14 +1,10 @@
-Date,Campaign Name,Cost,Impressions,Clicks,Conversions,Revenue
-2024-01-01,Summer Sale Campaign,$150.50,15000,750,38,$1140.00
-2024-01-02,Summer Sale Campaign,$165.25,16500,825,42,$1260.00
-2024-01-03,Summer Sale Campaign,$142.75,14000,700,35,$1050.00
-2024-01-01,Brand Awareness,$200.00,25000,500,15,$450.00
-2024-01-02,Brand Awareness,$220.00,27000,550,18,$540.00
-2024-01-03,Brand Awareness,$195.00,23000,480,14,$420.00
-2024-01-01,Product Launch,$300.00,30000,1500,90,$2700.00
-2024-01-02,Product Launch,$325.00,32000,1600,96,$2880.00
-2024-01-03,Product Launch,$310.00,31000,1550,93,$2790.00
-
-
-
-
+Date,Campaign Name,Creator Name,Video Name,Cost,Impressions,Clicks,Conversions,Revenue
+2024-01-01,Summer Sale Campaign,Alex Chen,Summer Promo Video,$150.50,15000,750,38,$1140.00
+2024-01-02,Summer Sale Campaign,Alex Chen,Summer Promo Video,$165.25,16500,825,42,$1260.00
+2024-01-03,Summer Sale Campaign,Alex Chen,Beach Day Sale Video,$142.75,14000,700,35,$1050.00
+2024-01-01,Brand Awareness,Maria Santos,Brand Story Part 1,$200.00,25000,500,15,$450.00
+2024-01-02,Brand Awareness,Maria Santos,Brand Story Part 2,$220.00,27000,550,18,$540.00
+2024-01-03,Brand Awareness,Maria Santos,Brand Story Part 3,$195.00,23000,480,14,$420.00
+2024-01-01,Product Launch,Jordan Lee,Product Unboxing,$300.00,30000,1500,90,$2700.00
+2024-01-02,Product Launch,Jordan Lee,Product Demo,$325.00,32000,1600,96,$2880.00
+2024-01-03,Product Launch,Jordan Lee,Product Features,$310.00,31000,1550,93,$2790.00

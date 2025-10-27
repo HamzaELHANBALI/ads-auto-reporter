@@ -1,11 +1,10 @@
-Day,Campaign,Cost,Impr.,Clicks,Conv.,Conv. value
-2024-01-01,Google Search - Brand,120.00,18000,600,30,900.00
-2024-01-02,Google Search - Brand,135.00,19500,650,33,990.00
-2024-01-03,Google Search - Brand,125.00,18500,620,31,930.00
-2024-01-01,Google Display Network,85.00,50000,800,20,600.00
-2024-01-02,Google Display Network,90.00,52000,850,22,660.00
-2024-01-03,Google Display Network,88.00,51000,820,21,630.00
-
-
-
-
+Day,Campaign,Creator Name,Video Name,Cost,Impr.,Clicks,Conv.,Conv. value
+2024-01-01,Search Campaign 1,David Park,Search Ad A,100.00,10000,400,24,720.00
+2024-01-02,Search Campaign 1,David Park,Search Ad B,110.00,11000,440,26,780.00
+2024-01-03,Search Campaign 1,David Park,Search Ad C,105.00,10500,420,25,750.00
+2024-01-01,Display Campaign,Lisa Wong,Display Banner Set 1,80.00,50000,1000,20,600.00
+2024-01-02,Display Campaign,Lisa Wong,Display Banner Set 2,85.00,52000,1040,21,630.00
+2024-01-03,Display Campaign,Lisa Wong,Display Banner Set 3,82.00,51000,1020,20,600.00
+2024-01-01,Shopping Ads,Tom Anderson,Product Feed,220.00,18000,540,32,960.00
+2024-01-02,Shopping Ads,Tom Anderson,Product Feed,240.00,20000,600,36,1080.00
+2024-01-03,Shopping Ads,Tom Anderson,Product Feed,230.00,19000,570,34,1020.00

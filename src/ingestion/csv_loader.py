@@ -5,6 +5,7 @@ from typing import Optional, List
 import pandas as pd
 from ..models.enums import AdPlatform
 from ..utils.logger import get_logger
+from .preprocessor import DataPreprocessor
 
 logger = get_logger(__name__)
 
@@ -39,6 +40,7 @@ class CSVLoader:
         """
         self.upload_path = upload_path or Path("data/uploads")
         self.upload_path.mkdir(parents=True, exist_ok=True)
+        self.preprocessor = DataPreprocessor()
     
     def load_csv(
         self,
@@ -106,6 +108,9 @@ class CSVLoader:
         # Basic validation
         if df.empty:
             raise ValueError("CSV file is empty")
+        
+        # Preprocess to add missing columns (Date, Revenue, etc.)
+        df = self.preprocessor.preprocess(df, file_path, platform.value)
         
         logger.info(f"Loaded {len(df)} rows from {file_path.name}")
         return df, platform

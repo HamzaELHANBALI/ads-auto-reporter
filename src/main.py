@@ -19,7 +19,7 @@ from .config import Config, get_config, set_config
 from .models.enums import AdPlatform, ReportPeriod
 from .ingestion import CSVLoader, DataNormalizer, DataValidator
 from .analytics import KPICalculator, DataAggregator
-from .dashboard import DashboardVisualizer, PDFExporter
+from .dashboard import PDFExporter
 from .reporting import DigestGenerator, EmailSender
 from .models.schemas import EmailConfig
 from .utils.logger import setup_logger, get_logger
@@ -160,34 +160,18 @@ class AdsReportingSystem:
         """
         Create and optionally run interactive dashboard.
         
+        Note: Legacy Dash dashboard. Use Streamlit version instead (streamlit_app.py)
+        
         Args:
             host: Dashboard host (uses config if None)
             port: Dashboard port (uses config if None)
             run_server: Whether to run the server
         """
-        if self.normalized_df is None:
-            raise RuntimeError("No data loaded. Call load_and_normalize_data() first.")
-        
-        logger.info("Creating dashboard")
-        
-        host = host or self.config.dashboard_host
-        port = port or self.config.dashboard_port
-        
-        visualizer = DashboardVisualizer(
-            host=host,
-            port=port,
-            debug=self.config.dashboard_debug
+        logger.warning("Legacy Dash dashboard is deprecated. Use 'streamlit run streamlit_app.py' instead.")
+        raise NotImplementedError(
+            "Dash dashboard has been replaced with Streamlit. "
+            "Run: streamlit run streamlit_app.py"
         )
-        
-        summaries = self.calculate_kpis()
-        visualizer.create_dashboard(self.normalized_df, summaries)
-        
-        if run_server:
-            logger.info(f"Starting dashboard server at http://{host}:{port}")
-            visualizer.run()
-        else:
-            logger.info("Dashboard created but not started")
-            return visualizer
     
     def export_pdf_report(
         self,

@@ -1,10 +1,12 @@
 """Interactive dashboard and visualization components."""
 
-from .visualizer import DashboardVisualizer
+# Legacy Dash visualizer - only import if needed
+# from .visualizer import DashboardVisualizer
+
 from .export import PDFExporter
 
 __all__ = [
-    "DashboardVisualizer",
+    # "DashboardVisualizer",  # Legacy - not needed for Streamlit
     "PDFExporter"
 ]
 

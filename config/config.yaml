@@ -1,0 +1,84 @@
+# Ads Auto-Reporting System Configuration
+
+# System Settings
+system:
+  project_name: "Ads Auto-Reporting System"
+  version: "1.0.0"
+  timezone: "UTC"
+  log_level: "INFO"
+
+# Data Processing
+data:
+  upload_path: "data/uploads"
+  processed_path: "data/processed"
+  output_path: "data/outputs"
+  supported_platforms:
+    - "tiktok"
+    - "meta"
+    - "google"
+  
+  # CSV normalization mappings
+  column_mappings:
+    tiktok:
+      date: "Date"
+      campaign: "Campaign Name"
+      spend: "Cost"
+      impressions: "Impressions"
+      clicks: "Clicks"
+      conversions: "Conversions"
+      revenue: "Revenue"
+    meta:
+      date: "reporting_starts"
+      campaign: "campaign_name"
+      spend: "spend"
+      impressions: "impressions"
+      clicks: "link_clicks"
+      conversions: "actions:offsite_conversion.fb_pixel_purchase"
+      revenue: "action_values:offsite_conversion.fb_pixel_purchase"
+    google:
+      date: "Day"
+      campaign: "Campaign"
+      spend: "Cost"
+      impressions: "Impr."
+      clicks: "Clicks"
+      conversions: "Conv."
+      revenue: "Conv. value"
+
+# KPI Thresholds
+kpis:
+  target_roas: 3.0
+  target_ctr: 0.02
+  target_cvr: 0.05
+  max_cpp: 50.0
+  
+# Dashboard Settings
+dashboard:
+  host: "127.0.0.1"
+  port: 8050
+  debug: false
+  
+# PDF Export
+pdf:
+  template: "templates/report_template.html"
+  output_format: "A4"
+  dpi: 300
+
+# Email Settings
+email:
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  use_tls: true
+  sender_name: "Ads Reporting System"
+  digest_day: "monday"  # Day of week to send digest
+  digest_hour: 9  # Hour of day (24h format)
+
+# Report Settings
+reporting:
+  lookback_days: 30
+  comparison_period_days: 7
+  include_charts: true
+  include_recommendations: true
+
+
+
+

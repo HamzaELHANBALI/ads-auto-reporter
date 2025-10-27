@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  ads-reporter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ads-reporting-system
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      # Email configuration (use secrets in production)
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - EMAIL_USERNAME=${EMAIL_USERNAME}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+    volumes:
+      # Mount data directories
+      - ./data/uploads:/app/data/uploads
+      - ./data/processed:/app/data/processed
+      - ./data/outputs:/app/data/outputs
+      - ./logs:/app/logs
+      - ./config:/app/config
+    ports:
+      # Dashboard port
+      - "8050:8050"
+    command: python -m src.main
+    restart: unless-stopped
+    networks:
+      - ads-reporter-network
+
+  # Optional: PostgreSQL for persistent data storage
+  postgres:
+    image: postgres:15-alpine
+    container_name: ads-reporter-db
+    environment:
+      - POSTGRES_DB=ads_reporting
+      - POSTGRES_USER=${DB_USER:-ads_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-change_me_in_production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - ads-reporter-network
+    profiles:
+      - with-db
+
+  # Optional: Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: ads-reporter-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ads-reporter-network
+    profiles:
+      - with-cache
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: ads-reporter-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - ads-reporter
+    networks:
+      - ads-reporter-network
+    profiles:
+      - with-proxy
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  ads-reporter-network:
+    driver: bridge
+
+
+
+

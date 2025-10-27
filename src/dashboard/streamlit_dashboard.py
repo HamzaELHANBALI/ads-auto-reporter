@@ -86,92 +86,116 @@ class StreamlitDashboard:
             st.warning("No data available for the selected filters.")
             return
         
-        # Main content
-        st.markdown("---")
+        # Get comparison data if enabled
+        comparison_df = None
+        if st.session_state.get('enable_comparison', False):
+            comparison_df = self._get_previous_period_data(filtered_df)
         
-        # KPI Cards
-        self._render_kpi_cards(filtered_df)
+        # Main content with tabs
+        tab1, tab2, tab3, tab4 = st.tabs([
+            "📊 Overview", 
+            "📈 Performance", 
+            "🎯 Campaigns", 
+            "📋 Detailed Analysis"
+        ])
         
-        st.markdown("---")
+        with tab1:
+            self._render_overview_tab(filtered_df, comparison_df)
         
-        # Charts Row 1
-        col1, col2 = st.columns(2)
-        with col1:
-            self._render_revenue_chart(filtered_df)
-        with col2:
-            self._render_roas_chart(filtered_df)
+        with tab2:
+            self._render_performance_tab(filtered_df)
         
-        st.markdown("---")
+        with tab3:
+            self._render_campaigns_tab(filtered_df)
         
-        # Charts Row 2
-        col1, col2 = st.columns(2)
-        with col1:
-            self._render_platform_breakdown(filtered_df)
-        with col2:
-            self._render_conversion_funnel(filtered_df)
-        
-        st.markdown("---")
-        
-        # Top Campaigns
-        self._render_top_campaigns(filtered_df)
-        
-        st.markdown("---")
-        
-        # Campaign Details Table
-        self._render_campaign_table(filtered_df)
+        with tab4:
+            self._render_detailed_tab(filtered_df)
         
     def _render_sidebar(self):
-        """Render sidebar with filters."""
-        st.sidebar.header("🎛️ Filters")
+        """Render sidebar with filters and presets."""
+        st.sidebar.header("🎛️ Filters & Controls")
         
-        # Date range
-        st.sidebar.subheader("📅 Date Range")
-        min_date = self.df['date'].min()
-        max_date = self.df['date'].max()
-        
-        date_range = st.sidebar.date_input(
-            "Select Date Range",
-            value=(min_date, max_date),
-            min_value=min_date,
-            max_value=max_date
-        )
-        
-        if len(date_range) == 2:
-            st.session_state['start_date'] = date_range[0]
-            st.session_state['end_date'] = date_range[1]
+        # Date range with presets
+        with st.sidebar.expander("📅 Date Range", expanded=True):
+            min_date = self.df['date'].min()
+            max_date = self.df['date'].max()
+            
+            # Preset date ranges
+            st.caption("Quick Presets:")
+            col1, col2, col3 = st.columns(3)
+            
+            today = date.today()
+            if col1.button("Last 7d", use_container_width=True):
+                st.session_state['start_date'] = today - timedelta(days=7)
+                st.session_state['end_date'] = today
+            if col2.button("Last 30d", use_container_width=True):
+                st.session_state['start_date'] = today - timedelta(days=30)
+                st.session_state['end_date'] = today
+            if col3.button("Last 90d", use_container_width=True):
+                st.session_state['start_date'] = today - timedelta(days=90)
+                st.session_state['end_date'] = today
+            
+            # Custom date picker
+            default_start = st.session_state.get('start_date', min_date)
+            default_end = st.session_state.get('end_date', max_date)
+            
+            date_range = st.date_input(
+                "Custom Range",
+                value=(default_start, default_end),
+                min_value=min_date,
+                max_value=max_date,
+                help="Select a custom date range for analysis"
+            )
+            
+            if len(date_range) == 2:
+                st.session_state['start_date'] = date_range[0]
+                st.session_state['end_date'] = date_range[1]
         
         # Platform filter
-        st.sidebar.subheader("🌐 Platform")
-        platforms = ['All'] + sorted(self.df['platform'].unique().tolist())
-        selected_platform = st.sidebar.selectbox(
-            "Select Platform",
-            platforms
-        )
-        st.session_state['platform'] = selected_platform
+        with st.sidebar.expander("🌐 Platform", expanded=True):
+            platforms = ['All'] + sorted(self.df['platform'].unique().tolist())
+            selected_platform = st.selectbox(
+                "Select Platform",
+                platforms,
+                key='platform_select',
+                help="Filter data by advertising platform"
+            )
+            st.session_state['platform'] = selected_platform
         
         # Campaign filter
-        st.sidebar.subheader("🎯 Campaign")
-        campaigns = ['All'] + sorted(self.df['campaign'].unique().tolist())
-        selected_campaign = st.sidebar.selectbox(
-            "Select Campaign",
-            campaigns
-        )
-        st.session_state['campaign'] = selected_campaign
+        with st.sidebar.expander("🎯 Campaign", expanded=False):
+            campaigns = ['All'] + sorted(self.df['campaign'].unique().tolist())
+            selected_campaign = st.selectbox(
+                "Select Campaign",
+                campaigns,
+                key='campaign_select',
+                help="Filter data by specific campaign"
+            )
+            st.session_state['campaign'] = selected_campaign
         
-        # Aggregation period
-        st.sidebar.subheader("📊 View")
-        period = st.sidebar.radio(
-            "Aggregation Period",
-            ['Daily', 'Weekly', 'Monthly']
-        )
-        st.session_state['period'] = period
+        # View settings
+        with st.sidebar.expander("📊 View Settings", expanded=True):
+            period = st.radio(
+                "Aggregation Period",
+                ['Daily', 'Weekly', 'Monthly'],
+                help="Choose how to aggregate time-series data"
+            )
+            st.session_state['period'] = period
+            
+            # Comparison toggle
+            enable_comparison = st.checkbox(
+                "Compare with Previous Period",
+                value=False,
+                help="Show period-over-period comparison"
+            )
+            st.session_state['enable_comparison'] = enable_comparison
         
         # Quick stats
         st.sidebar.markdown("---")
-        st.sidebar.subheader("📈 Quick Stats")
-        st.sidebar.metric("Total Records", f"{len(self.df):,}")
-        st.sidebar.metric("Total Campaigns", self.df['campaign'].nunique())
-        st.sidebar.metric("Date Range", f"{(max_date - min_date).days + 1} days")
+        with st.sidebar.expander("📈 Quick Stats", expanded=True):
+            st.metric("📊 Total Records", f"{len(self.df):,}", help="Total data points loaded")
+            st.metric("🎯 Campaigns", self.df['campaign'].nunique(), help="Unique campaigns")
+            st.metric("📅 Days", f"{(max_date - min_date).days + 1}", help="Date range span")
         
     def _apply_filters(self) -> pd.DataFrame:
         """Apply filters to dataframe."""
@@ -471,6 +495,317 @@ class StreamlitDashboard:
             file_name=f"campaign_data_{date.today().strftime('%Y%m%d')}.csv",
             mime="text/csv"
         )
+
+
+    def _get_previous_period_data(self, current_df: pd.DataFrame) -> pd.DataFrame:
+        """Get data from the previous period for comparison."""
+        if current_df.empty:
+            return pd.DataFrame()
+        
+        # Calculate period length
+        start = current_df['date'].min()
+        end = current_df['date'].max()
+        period_days = (end - start).days + 1
+        
+        # Get previous period
+        prev_end = start - timedelta(days=1)
+        prev_start = prev_end - timedelta(days=period_days - 1)
+        
+        # Filter to previous period
+        prev_df = self.df[
+            (self.df['date'] >= prev_start) & 
+            (self.df['date'] <= prev_end)
+        ].copy()
+        
+        return prev_df
+    
+    def _render_overview_tab(self, df: pd.DataFrame, comparison_df: Optional[pd.DataFrame]):
+        """Render overview tab with KPIs and high-level metrics."""
+        st.subheader("📊 Key Performance Indicators")
+        
+        # Calculate current metrics
+        current_metrics = self._calculate_metrics(df)
+        
+        # Calculate comparison if available
+        if comparison_df is not None and not comparison_df.empty:
+            prev_metrics = self._calculate_metrics(comparison_df)
+            st.caption("📆 Comparing with previous period")
+        else:
+            prev_metrics = None
+        
+        # Render KPI cards with comparisons
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            self._render_metric_card(
+                "💰 Total Spend", 
+                current_metrics['spend'],
+                prev_metrics['spend'] if prev_metrics else None,
+                format_type='currency'
+            )
+            self._render_metric_card(
+                "🖱️ CPC", 
+                current_metrics['cpc'],
+                prev_metrics['cpc'] if prev_metrics else None,
+                format_type='currency',
+                help_text="Cost Per Click - lower is better"
+            )
+        
+        with col2:
+            self._render_metric_card(
+                "💵 Total Revenue", 
+                current_metrics['revenue'],
+                prev_metrics['revenue'] if prev_metrics else None,
+                format_type='currency'
+            )
+            self._render_metric_card(
+                "📺 CPM", 
+                current_metrics['cpm'],
+                prev_metrics['cpm'] if prev_metrics else None,
+                format_type='currency',
+                help_text="Cost Per 1000 Impressions"
+            )
+        
+        with col3:
+            self._render_metric_card(
+                "📈 ROAS", 
+                current_metrics['roas'],
+                prev_metrics['roas'] if prev_metrics else None,
+                format_type='multiplier',
+                help_text="Return on Ad Spend - target: 3.0x"
+            )
+            self._render_metric_card(
+                "🛒 CPP", 
+                current_metrics['cpp'],
+                prev_metrics['cpp'] if prev_metrics else None,
+                format_type='currency',
+                help_text="Cost Per Purchase/Conversion"
+            )
+        
+        with col4:
+            self._render_metric_card(
+                "🎯 Conversions", 
+                current_metrics['conversions'],
+                prev_metrics['conversions'] if prev_metrics else None,
+                format_type='number'
+            )
+            self._render_metric_card(
+                "👆 CTR", 
+                current_metrics['ctr'],
+                prev_metrics['ctr'] if prev_metrics else None,
+                format_type='percentage',
+                help_text="Click Through Rate"
+            )
+        
+        st.markdown("---")
+        
+        # Revenue & Spend Chart
+        st.subheader("💹 Revenue vs Spend Trend")
+        self._render_revenue_chart(df)
+        
+        # Export button
+        st.download_button(
+            label="📥 Export Overview Data (CSV)",
+            data=df.to_csv(index=False).encode('utf-8'),
+            file_name=f"overview_data_{date.today().strftime('%Y%m%d')}.csv",
+            mime="text/csv"
+        )
+    
+    def _render_performance_tab(self, df: pd.DataFrame):
+        """Render performance tab with detailed charts."""
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("📊 ROAS Trend")
+            self._render_roas_chart(df)
+        
+        with col2:
+            st.subheader("🎯 Conversion Funnel")
+            self._render_conversion_funnel(df)
+        
+        st.markdown("---")
+        
+        st.subheader("🌐 Platform Performance Comparison")
+        self._render_platform_stacked_bars(df)
+        
+        # Export button
+        col1, col2 = st.columns([3, 1])
+        with col2:
+            platform_summary = df.groupby('platform').agg({
+                'spend': 'sum',
+                'revenue': 'sum',
+                'conversions': 'sum'
+            }).reset_index()
+            st.download_button(
+                label="📥 Export Platform Data",
+                data=platform_summary.to_csv(index=False).encode('utf-8'),
+                file_name=f"platform_performance_{date.today().strftime('%Y%m%d')}.csv",
+                mime="text/csv"
+            )
+    
+    def _render_campaigns_tab(self, df: pd.DataFrame):
+        """Render campaigns tab with top performers."""
+        st.subheader("🏆 Top Performing Campaigns")
+        
+        summaries = self.kpi_calculator.calculate_multiple_campaigns(df)
+        top_10 = sorted(summaries, key=lambda x: x.total_revenue, reverse=True)[:10]
+        
+        # Stacked bar chart for top campaigns
+        campaigns = [s.campaign[:30] for s in top_10]  # Truncate long names
+        revenues = [s.total_revenue for s in top_10]
+        spends = [s.total_spend for s in top_10]
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Bar(
+            name='Revenue',
+            y=campaigns,
+            x=revenues,
+            orientation='h',
+            marker_color='#2ecc71',
+            text=[format_currency(r) for r in revenues],
+            textposition='auto'
+        ))
+        
+        fig.add_trace(go.Bar(
+            name='Spend',
+            y=campaigns,
+            x=spends,
+            orientation='h',
+            marker_color='#e74c3c',
+            text=[format_currency(s) for s in spends],
+            textposition='auto'
+        ))
+        
+        fig.update_layout(
+            barmode='group',
+            template='plotly_white',
+            height=500,
+            xaxis_title="Amount ($)",
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # ROAS Performance Table
+        st.subheader("📊 Campaign ROAS Analysis")
+        roas_data = []
+        for s in top_10:
+            roas_data.append({
+                'Campaign': s.campaign,
+                'Platform': s.platform.value.upper(),
+                'ROAS': f"{s.roas:.2f}x",
+                'Performance': '🟢 Excellent' if s.roas >= 5 else '🟡 Good' if s.roas >= 3 else '🔴 Needs Work',
+                'Revenue': format_currency(s.total_revenue),
+                'Spend': format_currency(s.total_spend)
+            })
+        
+        roas_df = pd.DataFrame(roas_data)
+        st.dataframe(roas_df, use_container_width=True, hide_index=True)
+        
+        # Export button
+        st.download_button(
+            label="📥 Export Campaign Summary (CSV)",
+            data=roas_df.to_csv(index=False).encode('utf-8'),
+            file_name=f"campaign_summary_{date.today().strftime('%Y%m%d')}.csv",
+            mime="text/csv"
+        )
+    
+    def _render_detailed_tab(self, df: pd.DataFrame):
+        """Render detailed analysis tab with full campaign table."""
+        st.subheader("📋 Complete Campaign Analysis")
+        
+        self._render_campaign_table(df)
+    
+    def _calculate_metrics(self, df: pd.DataFrame) -> dict:
+        """Calculate all metrics for a dataframe."""
+        total_spend = df['spend'].sum()
+        total_revenue = df['revenue'].sum()
+        total_impressions = df['impressions'].sum()
+        total_clicks = df['clicks'].sum()
+        total_conversions = df['conversions'].sum()
+        
+        return {
+            'spend': total_spend,
+            'revenue': total_revenue,
+            'impressions': total_impressions,
+            'clicks': total_clicks,
+            'conversions': total_conversions,
+            'roas': self.kpi_calculator._calculate_roas(total_spend, total_revenue),
+            'cpc': self.kpi_calculator._calculate_cpc(total_spend, total_clicks),
+            'cpm': self.kpi_calculator._calculate_cpm(total_spend, total_impressions),
+            'cpp': self.kpi_calculator._calculate_cpp(total_spend, total_conversions),
+            'ctr': self.kpi_calculator._calculate_ctr(total_impressions, total_clicks),
+            'cvr': self.kpi_calculator._calculate_cvr(total_clicks, total_conversions)
+        }
+    
+    def _render_metric_card(self, label: str, value: float, prev_value: Optional[float] = None, 
+                           format_type: str = 'number', help_text: Optional[str] = None):
+        """Render a metric card with optional comparison."""
+        if format_type == 'currency':
+            formatted_value = format_currency(value)
+        elif format_type == 'percentage':
+            formatted_value = format_percentage(value)
+        elif format_type == 'multiplier':
+            formatted_value = f"{value:.2f}x"
+        else:
+            formatted_value = f"{value:,.0f}"
+        
+        # Calculate delta if comparison available
+        delta = None
+        delta_color = "off"
+        if prev_value is not None and prev_value != 0:
+            pct_change = ((value - prev_value) / prev_value) * 100
+            delta = f"{pct_change:+.1f}%"
+            delta_color = "normal" if pct_change >= 0 else "inverse"
+        
+        st.metric(
+            label=label,
+            value=formatted_value,
+            delta=delta,
+            delta_color=delta_color,
+            help=help_text
+        )
+    
+    def _render_platform_stacked_bars(self, df: pd.DataFrame):
+        """Render platform performance as stacked bars."""
+        platform_data = df.groupby('platform').agg({
+            'spend': 'sum',
+            'revenue': 'sum',
+            'conversions': 'sum'
+        }).reset_index()
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Bar(
+            name='Spend',
+            x=platform_data['platform'],
+            y=platform_data['spend'],
+            marker_color='#e74c3c',
+            text=[format_currency(s) for s in platform_data['spend']],
+            textposition='auto'
+        ))
+        
+        fig.add_trace(go.Bar(
+            name='Revenue',
+            x=platform_data['platform'],
+            y=platform_data['revenue'],
+            marker_color='#2ecc71',
+            text=[format_currency(r) for r in platform_data['revenue']],
+            textposition='auto'
+        ))
+        
+        fig.update_layout(
+            barmode='group',
+            template='plotly_white',
+            height=400,
+            yaxis_title="Amount ($)",
+            xaxis_title="Platform",
+            showlegend=True
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
 
 
 def run_streamlit_dashboard(df: pd.DataFrame):
